@@ -1,0 +1,32 @@
+{
+  "name": "web_assistant",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/app.js"
+  },
+  "pkg": {
+    "scripts": [
+      "src/app.js"
+    ],
+    "assets": [
+      "views/**/*",
+      "public/**/*"
+    ]
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@vercel/ncc": "^0.38.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.1",
+    "https-proxy-agent": "^7.0.6",
+    "mockjs": "^1.1.0",
+    "nodemon": "^3.1.7",
+    "pkg": "^5.8.1",
+    "sqlite3": "^5.1.7"
+  }
+}
