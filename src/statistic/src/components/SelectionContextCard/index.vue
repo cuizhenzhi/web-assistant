@@ -3,13 +3,32 @@
     <!-- 卡片头部 -->
     <div class="card-header">
       <div class="header-content">
-        <span class="selected-count">选择上下文</span>
+        <span class="selected-count">{{activeTitle}}</span>
         <span class="selection-count">(已选择 {{ selectedItemCount }} 项)</span>
       </div>
       <button class="close-btn" @click="close">
         <span>×</span>
       </button>
     </div>
+
+    <div class="tabs">
+      <div
+          class="tab"
+          :class="{ active: activeTab === 'context' }"
+          @click="activeTab = 'context'"
+      >
+        选择上下文
+      </div>
+      <div
+          class="tab"
+          :class="{ active: activeTab === 'tags' }"
+          @click="activeTab = 'tags'"
+      >
+        添加主题和标签
+      </div>
+    </div>
+
+    <div v-show="activeTab === 'context'">
 
     <!-- 时间范围显示 -->
     <div class="time-range">
@@ -129,14 +148,24 @@
         确认选择 ({{ selectedItemCount }}项)
       </button>
     </div>
+    </div>
+    <div v-show="activeTab === 'tags'">
+      <Keyword
+          @update:keywords="updateKeywordsUrl"
+          />
+    </div>
+
   </div>
 </template>
 
 <script>
 import {addContext, get, getContext} from "@/api/context";
-
+import Keyword from "./keyword.vue";
 export default {
   name: 'SelectionContextCard',
+  components:{
+    Keyword
+  },
   props: {
     isVisible: {
       type: Boolean,
@@ -188,43 +217,13 @@ export default {
         '#ed64a6', // 粉色
         '#38b2ac'  // 青色
       ],
-      // contextList: [
-      //   // {
-      //   //   id: 1,
-      //   //   name: '工作会议',
-      //   //   itemCount: 5,
-      //   //   color: '#4299e1',
-      //   //   description: '重要工作会议相关的网页记录',
-      //   //   createdAt: Date.now() - 86400000 // 1天前
-      //   // },
-      //   // {
-      //   //   id: 2,
-      //   //   name: '学习资料整理',
-      //   //   itemCount: 8,
-      //   //   color: '#48bb78',
-      //   //   description: '在线学习课程和教程收藏',
-      //   //   createdAt: Date.now() - 172800000 // 2天前
-      //   // },
-      //   // {
-      //   //   id: 3,
-      //   //   name: '项目研究',
-      //   //   itemCount: 3,
-      //   //   color: '#9f7aea',
-      //   //   description: '项目相关的参考资料',
-      //   //   createdAt: Date.now() - 43200000 // 12小时前
-      //   // },
-      //   // {
-      //   //   id: 4,
-      //   //   name: '日常浏览',
-      //   //   itemCount: 12,
-      //   //   color: '#ed8936',
-      //   //   description: '感兴趣的文章和新闻',
-      //   //   createdAt: Date.now() - 7200000 // 2小时前
-      //   // }
-      // ]
+      activeTab: 'context', // 添加这行
     }
   },
   computed: {
+    activeTitle(){
+      return this.activeTab === 'context' ? '添加上下文' : '添加主题和标签'
+    },
     positionStyle() {
       return {
         left: `${this.position.x}px`,
@@ -258,6 +257,10 @@ export default {
     }
   },
   methods: {
+    updateKeywordsUrl(data){
+      // console.log("keywords: ",data)
+      this.$emit('update:keywords', data);
+    },
     formatTime(timestamp) {
       const date = new Date(timestamp)
       return `${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
@@ -693,5 +696,29 @@ export default {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 12px 16px;
+  cursor: pointer;
+  color: #718096;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: #4299e1;
+}
+
+.tab.active {
+  color: #4299e1;
+  border-bottom-color: #4299e1;
 }
 </style>

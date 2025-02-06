@@ -29,7 +29,6 @@ export function get(){
     url: `/url_visit?start=${new Date('2025-01-01').getTime()}&end=1738508230555`,
     method: 'get'
   })
-
 }
 
 export function fetchTimelineVisit(start, end) {

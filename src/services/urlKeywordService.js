@@ -30,7 +30,39 @@ const updateKeywordToUrl = async (url_id, keywords) => {
 
   // console.log(`Updated keywords for URL ${url_id}: Added ${toAdd.length}, Removed ${toRemove.length}`);
 };
-
+const updateKeywordsToUrls = async (urls, keywords) => {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      console.log("URLS TRANSACTION BEGIN!");
+      db.run("BEGIN TRANSACTION");
+      let completed = 0;
+      for (let i = 0; i < urls.length; i++) {
+        const url_id = urls[i].id;
+        for (let i = 0; i < keywords.length; i++) {
+          const keyword_id = keywords[i].id;
+          db.run(`INSERT OR IGNORE INTO url_keyword (url_id, keyword_id) VALUES(?, ?); `, [url_id, keyword_id], function (err) {
+            if (err) {
+              reject(err);  // 错误处理
+              return;
+            }
+            completed++;
+            if (completed === urls.length * keywords.length) {
+              db.run("COMMIT", (err) => {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+                console.log("URLS COMMIT!");
+                resolve(urls);  // 确保所有插入操作完成后再resolve
+              });
+            }
+          });
+        }
+      }
+    })
+  })
+};
+// updateKeywordsToUrls([{id:12000},{id:12001},{id:12002},{id:13818}], [{id:270}, {id:271}, {id:272}, {id:286}])
 const getKeywordOfUrl = async (url_id) => {
   // 获取当前与 URL 关联的关键词
   return await fetchAll(
@@ -45,5 +77,6 @@ const getKeywordOfUrl = async (url_id) => {
 };
 module.exports = {
   updateKeywordToUrl,
+  updateKeywordsToUrls,
   getKeywordOfUrl
 };

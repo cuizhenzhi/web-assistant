@@ -21,17 +21,17 @@
     ></div>
     <!-- 时间轴内容 -->
     <ul class="time-line">
-      <template v-for="(dayData, dayIndex) in groupedData">
+      <template v-for="(dayData) in groupedData">
         <template v-for="(hourData, hour) in dayData.hours">
           <timeline-header
-              :key="`header-${dayIndex}-${hour}`"
+              :key="`header-${dayData.date}-${hour}`"
               :hour="hour"
               :date="isFirstHourOfDay(dayData, hour) ? dayData.date : ''"
               :first-hour="isFirstHourOfDay(dayData, hour)"
           />
           <timeline-item
               v-for="(item, itemIndex) in hourData"
-              :key="item.id-item.timestamp"
+              :key="`item-${item.id}-${item.timestamp}`"
               :timestamp="item.timestamp"
               :url="item.url"
               :domain="item.domain"
@@ -41,7 +41,9 @@
               :selected="selectedItems.includes(item.id)"
               :context_color="item.color"
               :context_id="item.context_id"
+              :keywords="item.keywords"
               :position="getItemPosition(hourData, itemIndex, item)"
+              :isBookmarked="Boolean(item.isBookmarked)"
               @urlLeave="handleUrlLeave"
               @urlEnter="handleUrlEnter"
           />
@@ -60,6 +62,11 @@
         :url="showUrlInfo.url"
         :mouseX="showUrlInfo.mouseX"
         :mouseY="showUrlInfo.mouseY"
+        :tags="showUrlInfo.keywords"
+        :theme="showUrlInfo.themes"
+        :context="showUrlInfo.context"
+        :initialBookmarked="showUrlInfo.isBookmarked"
+        @toggle-favorite="toggleFavorite"
     />
   </div>
 </template>
@@ -70,6 +77,7 @@ import TimelineItem from './TimelineItem.vue'
 import TimelineTooltip from "@/components/TimelineTooltip.vue";
 import { FunctionalCalendar } from 'vue-functional-calendar';
 import {fetchTimelineVisit} from "@/api/context";
+import {urlBookmark} from "@/api/url";
 
 export default {
   name: 'Time-line',
@@ -81,7 +89,11 @@ export default {
   },
   props:{
     visitsStart: {},
-    visitsEnd: {}
+    visitsEnd: {},
+    contextList:{
+      type: Array,
+      default: ()=>[]
+    },
   },
   data() {
     return {
@@ -99,7 +111,7 @@ export default {
         width: 0,
         height: 0
       },
-      showUrlInfo:{
+      showUrlInfo: {
         domain: "",
         domain_id: -1,
         id: -1,
@@ -108,7 +120,9 @@ export default {
         ucreated_at: -1,
         url: "",
         mouseX: 1000,
-        mouseY: 1000
+        mouseY: 1000,
+        isBookmarked: false,  // 确保有默认值
+        context: {}
       },
       showUrlVisible: false,
       tooltipenter: false,
@@ -147,18 +161,57 @@ export default {
   // },
 
   methods: {
+    toggleFavorite(data){
+      urlBookmark(data).then(_=>{
+        this.fetchData(new Date(this.visitsStart), new Date(this.visitsEnd))
+      })
+    },
     handleUrlEnter(data){
       // console.log(event.relatedTarget.classList.contains(),)
       // if(event.relatedTarget.classList.contains('time-line'))return;
       // console.log("enter",event.x, event.y,event.target,event)
       // this.$emit('urlEnter', this.id)
       this.showUrlVisible = false;
-      this.$nextTick(()=>{
-        this.showUrlVisible = true;
-        this.showUrlInfo = data;
-        // console.log('urlEner',data,)
+      // console.log("urldata",data.isBookmarked)
+      this.showUrlInfo = {
+        domain: "",
+        domain_id: -1,
+        id: -1,
+        timestamp: -1,
+        title: "",
+        ucreated_at: -1,
+        url: "",
+        mouseX: 1000,
+        mouseY: 1000,
+        isBookmarked: false,
+        keywords: [],
+        themes: [],
+        context: {}
+      };
+      const context = this.contextList.filter(i=>i.id===data.context_id)
+      // 重置状态并使用新数据
+      this.$nextTick(() => {
+        // 创建新的对象而不是修改现有对象
+        this.showUrlInfo = {
+          domain: data.domain || "",
+          domain_id: data.domain_id || -1,
+          id: data.id || -1,
+          timestamp: data.timestamp || -1,
+          title: data.title || "",
+          ucreated_at: data.ucreated_at || -1,
+          url: data.url || "",
+          mouseX: data.mouseX || 0,
+          mouseY: data.mouseY || 0,
+          isBookmarked: !!data.isBookmarked,  // 确保是布尔值
+          keywords: data.keywords || [],
+          themes: data.themes || [],
+          context: context.length ? context[0] : {}
+        };
+        console.log(this.contextList,data.context_id,context)
 
-      })
+        // 显示新的 tooltip
+        this.showUrlVisible = true;
+      });
     },
     getColor(color){
       if(!color) color = '#23b7e5'
@@ -206,10 +259,23 @@ export default {
         return `left`
       }
     },
-    handleUrlLeave(data){
-      // if(this.tooltipenter)return;
+    handleUrlLeave() {
+      // 清除状态
       // this.showUrlVisible = false;
-      // console.log('urlLeave',data,)
+      // this.showUrlInfo = {
+      //   domain: "",
+      //   domain_id: -1,
+      //   id: -1,
+      //   timestamp: -1,
+      //   title: "",
+      //   ucreated_at: -1,
+      //   url: "",
+      //   mouseX: 1000,
+      //   mouseY: 1000,
+      //   isBookmarked: false,
+      //   keywords: [],
+      //   themes: []
+      // };
     },
     handleMainLeave(){
       this.showUrlVisible = false;
@@ -397,6 +463,7 @@ export default {
       console.log(startDateString,endDateString)
       enddate = enddate.setDate(enddate.getDate()+1);
       return fetchTimelineVisit(startDateString, enddate).then(data=>{
+        console.log("浏览数据:",data)
         this.groupedData = Object.values(data)
       })
     },

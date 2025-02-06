@@ -1,15 +1,16 @@
 <template>
   <li :class="['tl-body', {'selected': selected}]" :data-id="id" :data-timestamp="timestamp"
       ref="main"
-      @mouseenter="handleUrlEnter"
-      @mouseleave="handleUrlLeave"
       :style="tlbodyStyle">
     <span class="time">{{ formatTime(timestamp) }}</span>
+    <span class="bookmark" v-if="isBookmarked">⭐</span>
 <!--    <span class="context" :style="spanLeftStyle"></span>-->
     <span class="context-left" :style="spanLeftStyle"></span>
     <span class="context-middle" :style="spanMiddleStyle"></span>
     <span class="context-right" :style="spanRightStyle"></span>
-    <h3 :style="{'--context-color': context_color}">
+    <h3 :style="{'--context-color': context_color}"
+        @mouseenter="handleUrlEnter"
+        @mouseleave="handleUrlLeave">
       <a :href="url" target="_blank">
         <img :src="faviconUrl" :alt="domain">
       </a>
@@ -71,6 +72,21 @@ export default {
       required: false,
       default: ""
     },
+    keywords: {
+      type: String,
+      required: false,
+      default: ""
+    },
+    themes: {
+      type: String,
+      required: false,
+      default: ""
+    },
+    isBookmarked: {
+      type: Boolean,
+      required: true,
+      default: false
+    }
   },
   computed: {
     faviconUrl() {
@@ -137,7 +153,7 @@ export default {
   methods: {
     handleUrlEnter(event){
       // console.log(event.relatedTarget.classList.contains(),)
-      if(event.relatedTarget?.classList.contains('time-line'))return;
+      // if(event.relatedTarget?.classList.contains('time-line'))return;
       // console.log("enter",event.x, event.y,event.target,event)
       let rect = this.$refs.main.getBoundingClientRect()
       this.$emit('urlEnter', {
@@ -147,8 +163,24 @@ export default {
         url: this.url,
         ucreated_at: this.ucreated_at,
         title: this.title,
+        keywords: this.keywords?.split(',').map(i=>{
+          let splited = i.split(':')
+          return {
+            id: splited[0],
+            name: splited[1]
+          }
+        }),
+        themes: this.themes?.split(',').map(i=>{
+          let splited = i.split(':')
+          return {
+            id: splited[0],
+            name: splited[1]
+          }
+        }),//this.themes?.split(',') || "",
+        isBookmarked: this.isBookmarked,
         mouseX: Math.min(rect.left + 30,window.innerWidth - 380),
         mouseY: Math.min(rect.top + 40,window.innerHeight - 210),
+        context_id: this.context_id
       })
     },
     handleUrlLeave(event){
@@ -197,6 +229,10 @@ export default {
 .tl-body span.time {
   top: -29px;
   opacity: 0.7;
+}
+
+.tl-body span.bookmark{
+  top: -50px;
 }
 .tl-body span.context {
   top: -47px;

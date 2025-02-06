@@ -3,6 +3,7 @@
     <timeline ref="timeline"
               @selection-change="selectionChange"
               @selection-start="selectionStart"
+              :context-list="contextList"
               :visitsStart="calendar.dateRange.start"
               :visitsEnd="calendar.dateRange.end"
     />
@@ -35,6 +36,7 @@
         @addContextWithUrls="addContextWithUrls"
         @close="clearSelection"
         @context-selected="handleContextSelected"
+        @update:keywords="updateKeywordsUrl"
     />
   </div>
 </template>
@@ -45,6 +47,7 @@ import TimelineTooltip from "@/components/TimelineTooltip.vue";
 import SelectionContextCard from "@/components/SelectionContextCard/index.vue";
 import { FunctionalCalendar } from 'vue-functional-calendar';
 import {addContext, get, getContext, updateUrlContext} from '../api/context.js'
+import {addUrlsKeywords} from "@/api/urlKeyword";
 export default {
   name: 'url-statistic',
   components: {
@@ -93,6 +96,12 @@ export default {
     // }
   },
   methods: {
+    updateKeywordsUrl(data){
+      console.log("url-statistic keywords: ",this.selectedUrls, data)
+      addUrlsKeywords(this.selectedUrls, data).then(_=>{
+        this.$refs.timeline.fetchData(this.calendar.dateRange.start, this.calendar.dateRange.end)
+      })
+    },
     choseDay(data){
       console.log(data, this.calendar)
       if(data.isMouseToRight)
